@@ -20,6 +20,7 @@ CCV=v1.2.0.post1
 MSV=v1.2.0.post1
 WHEEL_TAG="cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64"
 VENV="${ROOT}/.venv"
+TRANSFORMERS_PIN="4.38.2"
 
 say() { printf '\n\033[1m== %s\033[0m\n' "$*"; }
 die() { printf '\033[31mFAIL: %s\033[0m\n' "$*" >&2; exit 1; }
@@ -51,7 +52,13 @@ if [[ "${1:-}" == "--bootstrap" ]]; then
   pip install -q "$CCW"
   pip install -q "$MSW"
 
-  python -c "import torch, mamba_ssm; print('torch', torch.__version__, '| cuda', torch.version.cuda, '| mamba_ssm ok')"
+  # mamba_ssm's __init__ imports a language-model head that pulls in
+  # transformers, and transformers 5.x removed GreedySearchDecoderOnlyOutput.
+  # Pin the last release that still exports it and imposes no torch floor.
+  echo "pinning transformers ${TRANSFORMERS_PIN} ..."
+  pip install -q "transformers==${TRANSFORMERS_PIN}"
+
+  python -c "import torch; from mamba_ssm import Mamba; print('torch', torch.__version__, '| cuda', torch.version.cuda, '| Mamba ok')"
   echo
   echo "Bootstrap done. Now run:  bash run_repro.sh"
   exit 0
@@ -92,8 +99,16 @@ elif not cu.startswith("11.8"):
 sys.exit(0 if ok else 1)
 PYCHK
 
-python -c "import mamba_ssm; print('mamba_ssm ok')" \
+python -c "from mamba_ssm import Mamba; print('mamba_ssm ok')" \
   || die "mamba_ssm import failed; run: bash run_repro.sh --bootstrap"
+
+python - <<'PYCHK' || true
+import transformers
+mj = int(transformers.__version__.split('.')[0])
+if mj >= 5:
+    print(f"  warning: transformers {transformers.__version__} removed GreedySearchDecoderOnlyOutput;"
+          f" run: pip install 'transformers==4.38.2'")
+PYCHK
 
 [[ "${1:-}" == "--check" ]] && { echo; echo "Preflight passed."; exit 0; }
 

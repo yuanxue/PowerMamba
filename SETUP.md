@@ -57,13 +57,19 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -U pip wheel
 pip install torch==2.1.1 torchvision==0.16.1 torchaudio==2.1.1 \
   --index-url https://download.pytorch.org/whl/cu118
-pip install "numpy<2" pandas matplotlib scikit-learn
+pip install "numpy<2" pandas matplotlib scikit-learn "transformers==4.38.2"
 
 W=https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.2.0.post1
 pip install $W/causal_conv1d-1.2.0.post1+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 W=https://github.com/state-spaces/mamba/releases/download/v1.2.0.post1
 pip install $W/mamba_ssm-1.2.0.post1+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 ```
+
+`mamba_ssm`'s package init imports a language-model head, which imports `transformers`,
+and `transformers` 5.x removed `GreedySearchDecoderOnlyOutput`. Version 4.38.2 is the
+pin: it still exports the class, and it declares torch only as an optional extra, so it
+does not fight the torch 2.1.1 pin. Any 4.x release through 4.57 still carries the class,
+but the later ones want torch 2.2 or newer.
 
 A driver new enough for CUDA 12 runs these cu118 binaries, so the host CUDA version is
 not the constraint. The prebuilt wheels also skip a source build of the kernels, which
