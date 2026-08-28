@@ -55,7 +55,7 @@ python -u run_longExp.py \
 --e_fact 1 \
 --des 'Exp' \
 --kernel_size 7 \
---train_epochs 1 \
+--train_epochs 50 \
 --lradj '5' \
 --include_pred $include_pred \
 --itr 1 \

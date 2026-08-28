@@ -1,0 +1,21 @@
+# --- GridSet data (fetched from Zenodo, see data/fetch_gridset.sh) ---
+data/*.csv
+
+# --- run outputs ---
+PowerMamba/results/
+PowerMamba/test_results/
+PowerMamba/csv_results/
+PowerMamba/logs/LongForecasting/
+PowerMamba/checkpoints/*/checkpoint.pth
+!PowerMamba/checkpoints/price__24_PowerMamba_price_with_pred_*/checkpoint.pth
+!PowerMamba/checkpoints/price__24_PowerMamba_price_no_pred_*/checkpoint.pth
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+
+# --- os ---
+.DS_Store
