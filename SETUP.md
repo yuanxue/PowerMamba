@@ -35,21 +35,40 @@ The model needs a Linux host with an NVIDIA GPU, because `mamba_ssm` ships compi
 kernels. Every file in `PowerMamba/models/` except `Transformer.py` imports `mamba_ssm`
 at the top level, so CPU and Apple MPS are closed off even for the linear baselines.
 
-Install Python 3.10, since the pinned wheels are built for cp310.
+Install Python 3.10, since the pinned wheels are built for cp310. Ubuntu 22.04 ships it
+as the system Python.
+
+The torch version matters as much as the CUDA version. `mamba_ssm` 1.2.0.post1 publishes
+kernels compiled against torch 1.12 through 2.3, one build per minor version, and nothing
+newer. A host carrying a later torch cannot load them: the import fails on a missing
+`libcudart.so.11.0`. Lambda Stack ships torch 2.7.0 with CUDA 12.8 and hits exactly this,
+so build an isolated environment rather than installing into the system Python.
 
 ```bash
-conda env create -f environment.yml
-conda activate PowerMamba
+bash run_repro.sh --bootstrap
+```
+
+That creates `.venv`, installs torch 2.1.1+cu118 with its supporting packages, adds the
+two prebuilt kernel wheels, and verifies the import. `run_repro.sh` activates `.venv`
+automatically on later calls. The same steps by hand:
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate
+pip install -U pip wheel
+pip install torch==2.1.1 torchvision==0.16.1 torchaudio==2.1.1 \
+  --index-url https://download.pytorch.org/whl/cu118
+pip install "numpy<2" pandas matplotlib scikit-learn
 
 W=https://github.com/Dao-AILab/causal-conv1d/releases/download/v1.2.0.post1
 pip install $W/causal_conv1d-1.2.0.post1+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
-
 W=https://github.com/state-spaces/mamba/releases/download/v1.2.0.post1
 pip install $W/mamba_ssm-1.2.0.post1+cu118torch2.1cxx11abiFALSE-cp310-cp310-linux_x86_64.whl
 ```
 
-The prebuilt wheels skip a source build of the CUDA kernels, which takes 20 to 40
-minutes. A `cu122torch2.1` variant of each is published for CUDA 12 hosts.
+A driver new enough for CUDA 12 runs these cu118 binaries, so the host CUDA version is
+not the constraint. The prebuilt wheels also skip a source build of the kernels, which
+takes 20 to 40 minutes. `conda env create -f environment.yml` reaches the same place if
+conda is already installed.
 
 ## Renting a GPU
 
@@ -92,8 +111,8 @@ still bills its EBS volume, and an instance left running costs $24 a day.
 ```bash
 git clone https://github.com/yuanxue/PowerMamba.git
 cd PowerMamba && git checkout setup/gridshock-repro
-bash run_repro.sh --check     # confirms GPU, python, torch, installs the wheels
-bash run_repro.sh             # data + both runs + comparison
+bash run_repro.sh --bootstrap  # pinned torch 2.1.1+cu118 venv
+bash run_repro.sh              # data + both runs + comparison
 ```
 
 ## Running
@@ -102,13 +121,15 @@ bash run_repro.sh             # data + both runs + comparison
 the results next to upstream's committed numbers.
 
 ```bash
-bash run_repro.sh            # preflight, data, both runs, comparison table
-bash run_repro.sh --no-pred  # the 9-minute run only
-bash run_repro.sh --check    # preflight only, no training
+bash run_repro.sh --bootstrap  # build .venv with the pinned stack, once per box
+bash run_repro.sh              # preflight, data, both runs, comparison table
+bash run_repro.sh --no-pred    # the 9-minute run only
+bash run_repro.sh --check      # preflight only, no training
 ```
 
-Run `--check` first on a fresh box. It verifies the GPU, the Python version, a
-CUDA-enabled torch, and installs the two prebuilt wheels if `mamba_ssm` is missing.
+Run `--bootstrap` first on a fresh box, then `--check`. The check verifies the GPU, the
+Python version, a CUDA-enabled torch, and that the host torch is old enough to load the
+pinned kernels.
 
 The underlying scripts still run directly:
 
