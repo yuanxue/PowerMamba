@@ -53,6 +53,20 @@ minutes. A `cu122torch2.1` variant of each is published for CUDA 12 hosts.
 
 ## Running
 
+`run_repro.sh` checks the environment, fetches the data, runs both trainings, and prints
+the results next to upstream's committed numbers.
+
+```bash
+bash run_repro.sh            # preflight, data, both runs, comparison table
+bash run_repro.sh --no-pred  # the 9-minute run only
+bash run_repro.sh --check    # preflight only, no training
+```
+
+Run `--check` first on a fresh box. It verifies the GPU, the Python version, a
+CUDA-enabled torch, and installs the two prebuilt wheels if `mamba_ssm` is missing.
+
+The underlying scripts still run directly:
+
 ```bash
 cd PowerMamba
 sh ./scripts/PowerMamba_no_pred.sh
@@ -95,6 +109,9 @@ Upstream's committed logs end at these values, which are the reproduction target
 `PowerMamba/scripts/PowerMamba_no_pred.sh` passed `--train_epochs 1` while its own
 committed log records 50 epochs, so the released script reproduced nothing. This fork
 sets 50. The fix is worth sending upstream.
+
+Both scripts write their log to `logs/LongForecasting/` while creating only `./logs`,
+so the redirect failed and Python never started. Both now create the nested directory.
 
 Baseline run configurations are missing upstream. `PowerMamba/models/` carries
 Autoformer, iTransformer, PatchTST, TimesNet, DLinear, TimeMachine, and Transformer,

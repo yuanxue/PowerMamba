@@ -1,6 +1,9 @@
 if [ ! -d "./logs" ]; then
     mkdir ./logs
 fi
+if [ ! -d "./logs/LongForecasting" ]; then
+    mkdir -p ./logs/LongForecasting
+fi
 if [ ! -d "./csv_results" ]; then
     mkdir ./csv_results
 fi
