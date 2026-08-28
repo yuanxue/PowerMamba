@@ -185,6 +185,11 @@ sets 50. The fix is worth sending upstream.
 Both scripts write their log to `logs/LongForecasting/` while creating only `./logs`,
 so the redirect failed and Python never started. Both now create the nested directory.
 
+`PowerMamba/scripts/PowerMamba_no_pred.sh` passed `--dropout 0.2` while the committed
+log for that run records `dropout=0.7`, visible in both the argument namespace and the
+`cin0.7` tag of the run directory. Training at 0.2 lands about 3.6% above the reported
+MSE. This fork sets 0.7. The with-pred script is consistent at 0.5 and needs no change.
+
 Baseline run configurations are missing upstream. `PowerMamba/models/` carries
 Autoformer, iTransformer, PatchTST, TimesNet, DLinear, TimeMachine, and Transformer,
 while `PowerMamba/scripts/` carries only the two PowerMamba runs. Rebuilding the

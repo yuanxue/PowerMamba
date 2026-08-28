@@ -49,7 +49,7 @@ python -u run_longExp.py \
 --dec_in $c_out \
 --c_out $c_out \
 --n_embed 300 \
---dropout 0.2 \
+--dropout 0.7 \
 --revin 1 \
 --ch_ind 0 \
 --individual 0 \
