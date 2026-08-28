@@ -62,11 +62,16 @@ conda is optional on either provider below.
 
 ### Lambda Labs
 
-A10 24GB runs $0.60/GPU-hour, so the reproduction costs about $1.20. Sign up, paste an
-SSH public key into the dashboard, launch a `gpu_1x_a10` instance, and ssh in. Lambda
-Stack preinstalls the NVIDIA driver and CUDA, and there is no quota approval to wait on.
-Capacity is the thing that bites: A10 and A100 instances are often unavailable in the
-popular regions, so check a few.
+A10 24GB runs $1.29/GPU-hour and A6000 48GB runs $1.09, so the reproduction costs about
+$2.20 to $2.60. The A6000 is the better pick on price and memory alike. Sign up, add an
+SSH key to the workspace before launching, start a `gpu_1x_a10` or `gpu_1x_a6000`
+instance, and connect as `ubuntu@<ip>`. Lambda Stack preinstalls the NVIDIA driver, CUDA,
+and PyTorch on Ubuntu 22.04, and there is no quota approval to wait on. Capacity is the
+thing that bites: instances are often unavailable in the popular regions, so check a few.
+
+The V100 16GB at $0.79 is cheaper still, but its sm_70 architecture is older than what
+the mamba_ssm kernels are routinely tested against, so it is a gamble rather than a
+saving.
 
 ### AWS g5.xlarge
 
