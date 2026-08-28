@@ -126,10 +126,38 @@ fi
 cd "${ROOT}/PowerMamba"
 mkdir -p logs/LongForecasting
 
+# The upstream scripts redirect all python output into logs/LongForecasting,
+# so the terminal would otherwise sit silent for 25 minutes. Launch the run in
+# the background and stream its log, which also makes a stall visible.
 for r in "${RUNS[@]}"; do
   say "Training: ${r}  (50 epochs)"
   start=$(date +%s)
-  sh "./scripts/PowerMamba_${r}.sh"
+
+  marker="$(mktemp)"
+  sh "./scripts/PowerMamba_${r}.sh" &
+  trainpid=$!
+
+  newlog=""
+  for _ in $(seq 1 120); do
+    newlog="$(find logs/LongForecasting -name '*.log' -newer "$marker" 2>/dev/null | head -1)"
+    [[ -n "$newlog" ]] && break
+    kill -0 "$trainpid" 2>/dev/null || break
+    sleep 1
+  done
+  rm -f "$marker"
+
+  tailpid=""
+  if [[ -n "$newlog" ]]; then
+    echo "streaming ${newlog}"
+    tail -f --pid="$trainpid" "$newlog" &
+    tailpid=$!
+  else
+    echo "no log appeared; the run may have failed at startup"
+  fi
+
+  wait "$trainpid" || die "training ${r} exited non-zero; see logs/LongForecasting"
+  [[ -n "$tailpid" ]] && { kill "$tailpid" 2>/dev/null || true; wait "$tailpid" 2>/dev/null || true; }
+
   echo "elapsed: $(( ($(date +%s) - start) / 60 )) min"
 done
 

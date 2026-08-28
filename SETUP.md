@@ -133,6 +133,18 @@ bash run_repro.sh --no-pred    # the 9-minute run only
 bash run_repro.sh --check      # preflight only, no training
 ```
 
+Run it under `tmux` so a dropped SSH connection does not kill the training:
+
+```bash
+tmux new -s repro
+bash run_repro.sh
+# detach with ctrl-b then d; reattach later with: tmux attach -t repro
+```
+
+The runner streams the training log to the terminal. Upstream's scripts send all output
+to `logs/LongForecasting`, so without the stream the terminal shows nothing for 25
+minutes and a stalled run looks the same as a healthy one.
+
 Run `--bootstrap` first on a fresh box, then `--check`. The check verifies the GPU, the
 Python version, a CUDA-enabled torch, and that the host torch is old enough to load the
 pinned kernels.
