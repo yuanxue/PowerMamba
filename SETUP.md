@@ -51,6 +51,46 @@ pip install $W/mamba_ssm-1.2.0.post1+cu118torch2.1cxx11abiFALSE-cp310-cp310-linu
 The prebuilt wheels skip a source build of the CUDA kernels, which takes 20 to 40
 minutes. A `cu122torch2.1` variant of each is published for CUDA 12 hosts.
 
+## Renting a GPU
+
+The whole job is about 40 minutes of wall clock: roughly 10 minutes to build the conda
+environment, a minute to fetch the data, and 25 minutes of training. Budget two hours of
+billed time for a first attempt.
+
+Ubuntu 22.04 ships Python 3.10, which matches the cp310 wheels, so a plain venv works and
+conda is optional on either provider below.
+
+### Lambda Labs
+
+A10 24GB runs $0.60/GPU-hour, so the reproduction costs about $1.20. Sign up, paste an
+SSH public key into the dashboard, launch a `gpu_1x_a10` instance, and ssh in. Lambda
+Stack preinstalls the NVIDIA driver and CUDA, and there is no quota approval to wait on.
+Capacity is the thing that bites: A10 and A100 instances are often unavailable in the
+popular regions, so check a few.
+
+### AWS g5.xlarge
+
+The instance carries an A10G 24GB with 4 vCPU and 16 GiB RAM at $1.006/hour on-demand in
+us-east-1, putting the reproduction near $2.00 including a 100 GB gp3 root volume.
+
+A new AWS account starts with a quota of zero vCPUs for "Running On-Demand G and VT
+instances", and g5.xlarge needs four. Request the increase in Service Quotas before
+anything else, because approval takes hours and sometimes a couple of business days.
+After that, launch the Deep Learning AMI for Ubuntu 22.04, which carries the driver,
+CUDA, and conda, give it a 100 GB root volume, open port 22 to your address, and ssh in.
+
+Terminate the instance when the run finishes rather than stopping it. A stopped instance
+still bills its EBS volume, and an instance left running costs $24 a day.
+
+### Either one
+
+```bash
+git clone https://github.com/yuanxue/PowerMamba.git
+cd PowerMamba && git checkout setup/gridshock-repro
+bash run_repro.sh --check     # confirms GPU, python, torch, installs the wheels
+bash run_repro.sh             # data + both runs + comparison
+```
+
 ## Running
 
 `run_repro.sh` checks the environment, fetches the data, runs both trainings, and prints
