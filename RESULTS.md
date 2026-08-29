@@ -23,6 +23,9 @@ A residual near 1 to 2% is what a different card and nondeterministic reduction 
 produce. Per-category test losses at epoch 50: ancillary services 0.0188, price 0.0931,
 wind 0.0936, solar 0.2037, load 0.0675.
 
+A second run after the harness was vendored into `GridStateBench` landed at MSE 0.075038,
++1.86%, confirming that the move and its data-path change left the result intact.
+
 ## Without external forecasts
 
 The released script passed `--dropout 0.2` while its committed log records `dropout=0.7`.
@@ -34,9 +37,21 @@ Training at 0.2 gives:
 | MAE | 0.171710 | 0.166120 | +3.36% |
 | RSE | 0.288347 | 0.283241 | +1.80% |
 
-The gap is twice what the with-forecast run shows on the same card, which points at the
-dropout rather than at hardware. The script now sets 0.7; a rerun measuring that is the
-open item.
+Setting dropout to the 0.7 the authors' own log records, and changing nothing else, gives:
+
+| metric | measured | upstream | delta |
+|---|---|---|---|
+| MSE | 0.130848 | 0.129643 | **+0.93%** |
+| MAE | 0.166537 | 0.166120 | **+0.25%** |
+
+That settles it. The dropout accounts for the whole discrepancy: +3.64% at the released
+0.2, +0.93% at the logged 0.7, on the same card. Both configurations now reproduce, and
+the no-forecast run reproduces more closely than the with-forecast one.
+
+**The released script does not reproduce the released number, and the authors' own
+committed log says why.** That log preserves the argument namespace, which is the only
+reason the mismatch was visible. Most papers ship no such record, so discrepancies of this
+kind are ordinarily undetectable from the outside.
 
 ## Cost
 
